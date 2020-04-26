@@ -7,7 +7,7 @@ permalink: /about/
 Hi! I'm Ethan, and I'm a Computer Science student at the University of Central Florida. My main focus is in Cybersecurity, Penetration Testing, and Systems.
 
 <!--
-### hacking
+### cyber security
 From a young age I was always interested in technology, and specifically what makes all the amazing devices around us tick. One of my earliest memories was taking apart a computer and putting it back together again. This led to an intense thirst for anything related to how computers talk to one another, how a program works at the binary level, or even how a webpage is displayed on a screen.
 
 ### linux
