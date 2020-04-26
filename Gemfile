@@ -5,9 +5,9 @@ source "https://rubygems.org"
 #    gem "bourbon"
 #    gem "jekyll-paginate"
 # end
-gem 'jekyll', '~> 3.8.5'
+ gem 'jekyll', '~> 3.8.5'
 gem 'github-pages', '~> 204', group: :jekyll_plugins
-# gem 'bourbon'
-# gem 'html-proofer'
-# gem 'tzinfo'
-# gem 'tzinfo-data'
+gem 'bourbon'
+gem 'html-proofer'
+gem 'tzinfo'
+gem 'tzinfo-data'
