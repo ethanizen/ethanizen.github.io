@@ -1,6 +1,6 @@
 # Site settings
-title_left    : "Ethan"
-title_right   : "Izen" # default: ""
+title_left    : "ethan"
+title_right   : "izen" # default: ""
 description   : "Hacker, Tinkerer, Ranter"
 keywords      : "blog, hacking, penetration testing, linux, tech, technology"
 url           : https://ethanizen.github.io/ # site url
