@@ -8,6 +8,6 @@ source "https://rubygems.org"
 gem 'jekyll', '~> 3.8.5'
 gem 'github-pages', '~> 204', group: :jekyll_plugins
 # gem 'bourbon'
-gem 'html-proofer'
-gem 'tzinfo'
-gem 'tzinfo-data'
+# gem 'html-proofer'
+# gem 'tzinfo'
+# gem 'tzinfo-data'
