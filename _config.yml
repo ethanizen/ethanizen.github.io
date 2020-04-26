@@ -1,7 +1,7 @@
 # Site settings
 title_left    : "ethan"
 title_right   : "izen" # default: ""
-description   : "Hacker, Tinkerer, Ranter"
+description   : "Ethan Izenwasser | Cybersecurity"
 keywords      : "blog, hacking, penetration testing, linux, tech, technology"
 url           : https://ethanizen.github.io/ # site url
 baseurl       : "" # apply repo name like "/myproject" if used under gh-pages branch, else (under master branch) just leave empty/blank
