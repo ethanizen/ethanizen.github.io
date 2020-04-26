@@ -42,6 +42,9 @@ navbar:
   - slug : blog
     title: Blog
 
+gems:
+  - jekyll-font-awesome-sass
+
 exclude:
   - "gulp"
   - "node_modules"
