@@ -1,0 +1,137 @@
+I"�"<p>Leakage is a very unique box that is a lot of fun to enumerate. It begins with looking through a hosted git platform, and eventually finding some credentials that then allow us to steal an SSH key and get user access. Then we use an SUID binary to escalate our priveleges. All-in-all a super unique box.
+<!--excerpt--></p>
+
+<h1 id="information-gathering">Information Gathering</h1>
+
+<h2 id="port-scan-nmap">Port Scan: nmap</h2>
+<p>We begin, as always, with a port scan of the box:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kali@kali debug <span class="nv">$ </span>nmap <span class="nt">-T4</span> <span class="nt">-p-</span> <span class="nt">-A</span> <span class="nt">-oA</span> nmap/leakage 172.31.1.6
+<span class="c"># Nmap 7.80 scan initiated Tue Apr 21 20:01:40 2020 as: nmap -T4 -p- -A -oA nmap/leakage 172.31.1.6</span>
+Nmap scan report <span class="k">for </span>172.31.1.6
+Host is up <span class="o">(</span>0.048s latency<span class="o">)</span><span class="nb">.</span>
+Not shown: 65531 closed ports
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 7a:5a:dd:ad:4c:6f:6c:4a:60:06:4f:46:53:77:96:15 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 83:ff:c2:72:62:11:4a:86:f9:bf:41:2c:b6:2b:97:a4 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 bf:93:3b:d1:6b:ea:32:99:6c:46:75:7b:e2:f1:8a:d9 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp   open  http    nginx
+| http-robots.txt: 57 disallowed entries <span class="o">(</span>15 shown<span class="o">)</span>
+| / /autocomplete/users /search /api /admin /profile 
+| /dashboard /projects/new /groups/new /groups/<span class="k">*</span>/edit /users /help 
+|_/s/ /snippets/new /snippets/<span class="k">*</span>/edit
+| http-title: Sign <span class="k">in</span> <span class="se">\x</span>C2<span class="se">\x</span>B7 GitLab
+|_Requested resource was http://172.31.1.6/users/sign_in
+|_http-trane-info: Problem with XML parsing of /evox/about
+8060/tcp open  http    nginx 1.16.1
+|_http-server-header: nginx/1.16.1
+|_http-title: 404 Not Found
+9094/tcp open  unknown
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ <span class="nb">.</span>
+<span class="c"># Nmap done at Tue Apr 21 20:02:16 2020 -- 1 IP address (1 host up) scanned in 36.52 seconds</span>
+</code></pre></div></div>
+
+<p>There are 4 ports open: 22 (SSH), 80(http), 8060(http), and 9094(unknown). We can see on port 80 that they have left the robots.txt available for anyone to read, a portion of which is below:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># See http://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+#
+# To ban all spiders from the entire site uncomment the next two lines:
+# User-Agent: *
+# Disallow: /
+
+# Add a 1 second delay between successive requests to the same server, limits resources used by crawler
+# Only some crawlers respect this setting, e.g. Googlebot does not
+# Crawl-delay: 1
+
+# Based on details in https://gitlab.com/gitlab-org/gitlab/blob/master/config/routes.rb, https://gitlab.com/gitlab-org/gitlab/blob/master/spec/routing, and using application
+User-Agent: *
+Disallow: /autocomplete/users
+Disallow: /search
+Disallow: /api
+Disallow: /admin
+Disallow: /profile
+Disallow: /dashboard
+Disallow: /projects/new
+.
+.
+.
+</code></pre></div></div>
+
+<p>It seems we are going to be dealing with an implementation of <strong>GitLab</strong>, a FOSS git repository platform.</p>
+
+<h2 id="website-enumeration">Website Enumeration</h2>
+
+<p>Navigating to http://172.31.1.6 we get redirected to http://172.31.1.6/users/sign_in</p>
+
+<p><img src="/assets/images/writeups/leakage/gitlab.png" alt="GitLab Sign-In" /></p>
+
+<p>Trying to navigate to another page in robots.txt redirects us to the login page or a limited version of the website. Let’s create an account an maybe we can get more access. I signed up with a random username and email and was given access to the rest of the platform.</p>
+
+<p><img src="/assets/images/writeups/leakage/loggedin.png" alt="Logged in" /></p>
+
+<p>Navigating around the website it seems pretty sparse and there isn’t much that has been uploaded. One interesting page, however, is the <strong>/public</strong> directory.</p>
+
+<p><img src="/assets/images/writeups/leakage/public.png" alt="/public" /></p>
+
+<p>It looks like there are three git repositories owned by the user <strong>jonathan</strong>. Let’s make a note of that username and take a look through the repos. The ruby-on-rails and first-project repos only have an initial commit on them, and not really much to look at. Let’s dig a little deeper into the <strong>CMS</strong> directory:</p>
+
+<p><img src="/assets/images/writeups/leakage/cms.png" alt="CMS Commits" /></p>
+
+<p>There are three commits made by jonathan, with two of them on the same file. It seems that jonathan accidentally included his password in the first commit, and took it out in the second.</p>
+
+<p><img src="/assets/images/writeups/leakage/jon_pass.png" alt="Oops! Didn't mean to upload that!" />
+<img src="/assets/images/writeups/leakage/removed_pass.png" alt="Phew! I got rid of it before anyone saw." /></p>
+
+<h1 id="exploitation">Exploitation</h1>
+
+<h2 id="user-flag">User Flag</h2>
+
+<p>So, now we have a password. The question is, where do we use it? Since it was used as a SQL password in config.php, I thought there might have been a mySQL server on the box. Unfortunately, that didn’t lead anywhere. However, we are able to log into GitLab using those credentials:</p>
+
+<p><img src="/assets/images/writeups/leakage/jonathan_logged.png" alt="We're in!" /></p>
+
+<p>Jonathan has a hidden repository it seems called <strong>security</strong>. If we open it up we see that he has his private SSH key stored in the repository. Jackpot!</p>
+
+<p><img src="/assets/images/writeups/leakage/ssh_key.png" alt="SSH Key" /></p>
+
+<p>Let’s copy that to our local machine, and try to SSH into the box using the stolen key.</p>
+
+<p><img src="/assets/images/writeups/leakage/oops.png" alt="Doesn't work" /></p>
+<blockquote>
+  <p>Note: jonathan_ssh.key is the same as id_rsa from the repo</p>
+</blockquote>
+
+<p>We need his passphrase to be able to log into the box. Luckily, we can use <strong>john</strong> to get that passphrase. First, we use <strong>ssh2john.py</strong> to convert the key to a formate readable by john. Then, we just run john on the file (using the rockyou.txt password list) and we will eventually get the passphrase.</p>
+
+<p><img src="/assets/images/writeups/leakage/ssh2john.png" alt="ssh2john" /></p>
+
+<p>Jinkies! Looks like we have our passphrase! Let’s try to ssh back into the machine.</p>
+
+<p><img src="/assets/images/writeups/leakage/ssh.png" alt="Now we're REALLY in!" /></p>
+
+<p>From here we can get our <strong>access.txt</strong> (which I won’t show in this writeup).</p>
+
+<h2 id="root-flag">Root Flag</h2>
+
+<p>Now that we have user access, let’s try to find a way to escalate our privileges. Let’s upload LinEnum.sh by setting up an http server on our local machine using <code class="highlighter-rouge">python -m SimpleHTTPServer 80</code> in the directory that has the sh file. Then we can use <strong>wget</strong> to download it onto leakage, and the run it. Looking through the ouput, one bit catches my eye:</p>
+
+<p><img src="/assets/images/writeups/leakage/suid.png" alt="LinEnum.sh" /></p>
+
+<p><strong>Nano</strong> (a cli-based text editor) has SUID set, which means we can run it with root privileges even if we aren’t root. What can we do with that ability? We can essentially open and view any file on the machine. Let’s take a look at <strong>/etc/shadow</strong>.</p>
+
+<p><img src="/assets/images/writeups/leakage/shadow.png" alt="/etc/shadow" /></p>
+
+<p>Eureka! We can now pretty easily get the root user’s password. Let’s copy the hash (from the first ‘:’ to the second ‘:’) and run it through <strong>hashcat</strong>. The beginning of the hash starts with a $6$ which means it is a SHA-512 hash. You can look up different hash types accepted by hashcat <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">here</a>, with an example of each type. Let’s try to reverse that hash:</p>
+
+<p><img src="/assets/images/writeups/leakage/hashcat.png" alt="hashcat" /></p>
+
+<p>Now that we’ve reverse the hash, let’s try to log in to the root user.</p>
+
+<p><img src="/assets/images/writeups/leakage/root.png" alt="We've done it!" /></p>
+
+<p>From here we can get <strong>system.txt</strong> (which, once again, I will not be showing).</p>
+:ET

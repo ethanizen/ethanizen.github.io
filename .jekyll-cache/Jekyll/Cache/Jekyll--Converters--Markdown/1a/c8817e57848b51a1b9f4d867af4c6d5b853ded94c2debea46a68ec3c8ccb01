@@ -1,0 +1,24 @@
+I"<p>Hi! I’m Ethan, and I’m a Computer Science student at the University of Central Florida. My main focus is in Cybersecurity, Penetration Testing, and Systems.</p>
+
+<h2 id="more-information">More Information</h2>
+
+<h3 id="hacking">Hacking</h3>
+<p>From a young age I was always interested in technology, and specifically what makes all the amazing devices around us tick. One of my earliest memories was taking apart a computer and putting it back together again. This led to an intense thirst for anything related to how computers talk to one another, how a program works at the binary level, or even how a webpage is displayed on a screen.</p>
+
+<h3 id="linux">Linux</h3>
+<p>I’ve been a user of Linux since the 7th grade, and my love affair doesn’t seem to be letting up any time soon.</p>
+
+<h3 id="dotfiles">Dotfiles</h3>
+<p>You can find the dotfiles for my setup on my <a href="github.com/ethanizen/dotfiles">Github</a>. I try to strike a balance between usability, looks, and streamlining my workflow. Feel free to tinker around with them!
+Currently I am using:</p>
+<ul>
+  <li>Window Manager: i3</li>
+  <li>Terminal Emulator: alacritty</li>
+  <li>Shell: zsh</li>
+  <li>Text Editor: NeoVim</li>
+</ul>
+
+<h2 id="contact-me">Contact me</h2>
+
+<p><a href="mailto:e@ethanizen.com">e@ethanizen.com</a></p>
+:ET
