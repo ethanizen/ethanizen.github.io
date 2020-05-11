@@ -1,6 +1,8 @@
 ﻿---
 layout: post
 title: "The Messages: Political and Social Messaging in Hip-Hop"
+description: "A look into the wonderful world of conscious rap and its developments from the pre-Golden Age to the modern day."
+author: Ethan Izenwasser
 ---
 
 “It’s like a jungle sometimes, it makes me wonder how I keep from goin’ under.” These are the opening lines to “The Message” by Grandmaster Flash and the Furious Five. Like Upton Sinclair and his book The Jungle (released 76 years before “The Message”), Grandmaster Flash wanted to shed light on the circumstances of the time. Both wanted to elevate the pain and suffering of exploited people into the minds and hearts of the country. Both wanted to see a change. Both wanted - needed - to speak a message. That is the power of hip-hop culture and rap. The ability to speak to one’s circumstances in a way that transcends those same circumstances. Political and social messaging was integral to the development of hip-hop, and continues to influence artists working in the genre today.

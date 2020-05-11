@@ -6,6 +6,7 @@ keywords      : "blog, hacking, penetration testing, linux, tech, technology"
 url           : https://ethanizen.github.io/ # site url
 baseurl       : "" # apply repo name like "/myproject" if used under gh-pages branch, else (under master branch) just leave empty/blank
 cover         : "" # image uri like logo/cover image for site seo
+author        : "Ethan Izenwasser"
 
 google_analytics  : UA-164602092-1
 twitter_username  : "ethanizen"
